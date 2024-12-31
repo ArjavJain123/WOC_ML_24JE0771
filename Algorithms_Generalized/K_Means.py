@@ -13,7 +13,7 @@ class KMeans:
         returns:
         centroids --> a 2d array of size (k,n) which contains random k random eg from X_train
         """
-        random_indxs = np.random.choice(X_train, size = k, replace = False)
+        random_indxs = np.random.choice(X_train.shape[0], size = k, replace = False)
         centroids = X_train[random_indxs]
         return centroids
     def _euc_dist(self,x1,x2):
