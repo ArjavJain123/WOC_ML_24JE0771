@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class KMeans:
-    def __init__(self,t):
+    def __init__(self):
         pass
     def _init_centroids(self, X_train, k):
         """
