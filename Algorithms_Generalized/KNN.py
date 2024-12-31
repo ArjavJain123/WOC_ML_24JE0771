@@ -6,7 +6,7 @@ class KNN:
     def __init__(self,distance_metric='euc'):
         if 'euc' in distance_metric or 'l2' in distance_metric:
             self.dist_func = self.euc_dist
-        elif 'manh' in distance_metric or 'l1' in distance_metric:
+        elif 'man' in distance_metric or 'l1' in distance_metric:
             self.dist_func = self.manh_dist
         else:
             raise Exception("Unsupported distance function")
