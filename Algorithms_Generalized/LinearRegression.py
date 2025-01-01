@@ -153,3 +153,32 @@ class LinearRegression:
         plt.show()
     def predict(self, X):
         return np.dot(X, self.W.T) + self.B
+    
+    def R2_error(self, X, Y):
+        predictions = self.predict(X)
+        SS_res = np.sum((Y-predictions)**2)
+        Ybar = np.mean(Y)
+        SS_tot = np.sum((Y-Ybar)**2)
+        R2 = 1-(SS_res/SS_tot)
+        return R2
+    def residual_plot(self, X, Y):
+        predictions = self.predict(X)
+        residuals = predictions - Y
+        plt.scatter(np.arange(1,X.shape[0]+1), residuals, color='blue', alpha = 0.4)
+        plt.axhline(0, color='green', linestyle='--')
+        plt.xlabel("Examples")
+        plt.ylabel("Residual (y_hat - y)")
+        plt.title("Residual plot")
+        plt.legend()
+        plt.show()
+        
+    def histogram_plot(self, X, Y):
+        predictions = self.predict(X)
+        residuals = predictions - Y
+        plt.hist(residuals, bins=100,color='skyblue',edgecolor='black',alpha=0.6)
+        plt.xlabel("Residuals (y_hat - y)")
+        plt.ylabel("Frequency")
+        plt.title("Histogram Plot")
+        plt.axvline(0,color='r',linestyle='--')
+        plt.legend()
+        plt.show()
