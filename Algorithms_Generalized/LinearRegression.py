@@ -1,6 +1,6 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class LinearRegression:
     def __init__(self,inp_features, alpha=1e-3, reg_param=None, batch_size=32,epochs=100):
@@ -38,7 +38,7 @@ class LinearRegression:
         m = X.shape[0]
         Y = Y.reshape((m,1))
         J_history_batches = []
-        J_history_entire = []
+        J_hist_ep = []
         for epoch in range(1,self.epochs+1):
             indxs = np.random.permutation(m)
             X_shuffled = X[indxs,:]
@@ -81,21 +81,24 @@ class LinearRegression:
                     print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost:.6f}")
             # cost = self._compute_cost(X_shuffled, Y_shuffled) if self.reg_param is None else self._compute_cost_reg(X_shuffled, Y_shuffled)
             cost = self.cost_func(X_shuffled, Y_shuffled)
-            J_history_entire.append(cost)
-            predictions = self.predict(X_shuffled)
+            J_hist_ep.append(cost)
             print(f"Epoch: {epoch:03d}, Cost: {cost:.6f}")
-        self._plotter(J_history_entire) if plot_costs else None
-        return J_history_batches, J_history_entire
+        self._plotter(J_hist_ep) if plot_costs else None
+        return J_history_batches, J_hist_ep
     
-    def k_fold_cv(self, X, Y, k=5,details=True,plot_cost_vs_epoch=True,plot_cost_vs_fold=True,retrain=True):
+    def k_fold_cv(self, X, Y, k=5,details=True,plot_cost_vs_epoch=True,plot_cost_vs_fold=True,retrain=True,plot_r2_vs_fold=True):
         m = X.shape[0]
         indxs = np.random.permutation(m)
         X_shuffled = X[indxs,:]
         Y_shuffled = Y[indxs]
         Y_shuffled = Y_shuffled.reshape((m,1))
         fold_size = m //k
-        training_costs = []
-        testing_costs = []
+        train_costs = []
+        test_costs = []
+        train_r2s = []
+        test_r2s = []
+        mean_of_train_costs = 0.0
+        mean_of_test_costs = 0.0
         if plot_cost_vs_epoch:
             J_hist_list = []
         for i in range(k):
@@ -111,20 +114,29 @@ class LinearRegression:
             if plot_cost_vs_epoch:
                 J_hist_list.append(J_hist)
             training_cost = self._compute_cost(x_train, y_train)
+            mean_of_train_costs += (training_cost/k)
             testing_cost = self._compute_cost(x_test,y_test)
-            training_costs.append(training_costs)
-            testing_costs.append(testing_costs)
+            mean_of_test_costs += (testing_cost/k)
+            train_r2 = self.R2_score(x_train, y_train)
+            test_r2 = self.R2_score(x_test,y_test)
+            train_r2s.append(train_r2)
+            test_r2s.append(test_r2)
+            train_costs.append(training_cost)
+            test_costs.append(testing_cost)
             print(f"Training cost for fold {i+1} is {training_cost}")
+            print(f"Training R2 score for fold {i+1} is {train_r2}")
             print(f"Testing cost for fold {i+1} is {testing_cost}")
+            print(f"Testing R2 score for fold {i+1} is {test_r2}")
             print(f"Fold {i+1} completed")
             print(f"Starting fold {i+2}") if i<k-1 else None
-            
-        print(f"Mean of Training Costs: {np.mean(training_costs)}")
-        print(f"Mean of Testing Costs: {np.mean(testing_costs)}")
+        # mean_of_training_costs = np.mean(training_costs)
+        print(f"Mean of Training Costs: {mean_of_train_costs}")
+        # mean_of_testing_costs = np.mean(testing_costs)
+        print(f"Mean of Testing Costs: {mean_of_test_costs}")
         #Plotting:
         if plot_cost_vs_epoch:
             for i in range(k):
-                plt.plot(np.arange(1,len(J_hist_list[i])+1), J_hist_list[i],c='r',label='Costs')
+                plt.plot(np.arange(1,len(J_hist_list[i])+1), np.array(J_hist_list[i]),c='r',label='Costs')
                 plt.title(f"Cost vs Epoch for fold {i+1}")
                 plt.xlabel("Epoch")
                 plt.ylabel("Cost")
@@ -132,19 +144,25 @@ class LinearRegression:
                 plt.show()
                 
         if plot_cost_vs_fold:
-            plt.plot(np.arange(1,k+1), training_costs, c='r', label='Training costs')
-            plt.plot(np.arange(1,k+1), testing_cost, c='b', label='Testing Costs')
+            plt.plot(np.arange(1,k+1), train_costs, c='r', label='Training costs')
+            plt.plot(np.arange(1,k+1), test_costs, c='b', label='Testing Costs')
             plt.xlabel('Fold')
             plt.ylabel("Cost")
             plt.legend()
             plt.show()
-            
+        if plot_r2_vs_fold:
+            plt.plot(np.arange(1,k+1), train_r2s, c='r', label='Training R2 score')
+            plt.plot(np.arange(1,k+1), test_r2s, c='b', label='Testing R2 score')
+            plt.xlabel('Fold')
+            plt.ylabel("R2 score")
+            plt.legend()
+            plt.show()
         if retrain:
             print("Retraining model...")
             self.train(X, Y, details=details, plot_costs=True)
             print("Retraining Complete")
             
-        return training_costs,testing_costs
+        return train_costs,test_costs, train_r2s, test_r2s
     def _plotter(self, J_hist):
         plt.plot(np.arange(1,len(J_hist)+1), J_hist, c='r')
         plt.xlabel('Epochs')
@@ -154,7 +172,7 @@ class LinearRegression:
     def predict(self, X):
         return np.dot(X, self.W.T) + self.B
     
-    def R2_error(self, X, Y):
+    def R2_score(self, X, Y):
         predictions = self.predict(X)
         SS_res = np.sum((Y-predictions)**2)
         Ybar = np.mean(Y)
@@ -162,6 +180,7 @@ class LinearRegression:
         R2 = 1-(SS_res/SS_tot)
         return R2
     def residual_plot(self, X, Y):
+        # m = np.maximum(X.shape[0],1000)
         predictions = self.predict(X)
         residuals = predictions - Y
         plt.scatter(np.arange(1,X.shape[0]+1), residuals, color='blue', alpha = 0.4)
@@ -173,9 +192,10 @@ class LinearRegression:
         plt.show()
         
     def histogram_plot(self, X, Y):
+        # m = np.maximum(X.shape[0],1000)
         predictions = self.predict(X)
         residuals = predictions - Y
-        plt.hist(residuals, bins=100,color='skyblue',edgecolor='black',alpha=0.6)
+        plt.hist(residuals, bins=20,density=True,color='skyblue',edgecolor='black',alpha=0.6)
         plt.xlabel("Residuals (y_hat - y)")
         plt.ylabel("Frequency")
         plt.title("Histogram Plot")
