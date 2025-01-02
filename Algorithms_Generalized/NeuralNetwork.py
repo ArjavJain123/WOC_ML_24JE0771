@@ -28,28 +28,27 @@ class NeuralNetwork:
     return (z >0).astype(int)
   def _get_deltaZ_lastLayer(self,A, Y):
     return A - Y
-  def _compute_cost(self,A, Y, cost_func):
+  def _compute_cost(self,A, Y, cost_func,reg=True):
     if 'soft' in cost_func:
         m = Y.shape[1]
         cost = -np.sum(Y * np.log(A)) / m
+        cost += self._add_reg_term(m) if reg else 0
         return cost
     elif 'sigm' in cost_func:
         m = Y.shape[1]
         cost = (-1 / m) * np.sum(np.multiply(Y, np.log(A)) + np.multiply(1 - Y, np.log(1 - A)))
+        cost += self._add_reg_term(m) if reg else 0
         return cost
     else:
         raise Exception("Unsupported Cost function")
       
-  def _compute_cost_reg(self,A,Y,cost_func):
-    m = Y.shape[1]
-    cost = self._compute_cost(A,Y,cost_func)
+  def _add_reg_term(self,m):
     L = len(self.layer_list) - 1
     reg_cost = 0.0
     for l in range(1,L+1):
       reg_cost += np.sum(self.params[f"W{l}"]**2)
     reg_cost = (reg_cost*self.reg_param)/(2*m)
-    cost += reg_cost
-    return cost
+    return reg_cost
   def _one_hot(self, Y):
     uniq_labels = np.unique(Y)
     C = len(uniq_labels)
@@ -143,11 +142,12 @@ class NeuralNetwork:
             A_last = self._fwd_prp(mini_batch_X)
             self._update_grads(mini_batch_X, mini_batch_Y)
             self._update_params()
-            cost = self._compute_cost(A_last, mini_batch_Y, cost_func)
-            cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
+            cost = self._compute_cost(A_last, mini_batch_Y, cost_func,reg=False)
             J_history_batches.append(cost)
+            cost += self._add_reg_term(mini_batch_Y.shape[1]) if self.reg_param is not None else 0.0
+            # First I am appending normal cost, and then I am adding the reg term to it, for printing
             if details:
-                print(f"Epoch: {epoch:03d}, Batch: {k+1}/{batches}, Cost: {cost_reg:.6f}")
+                print(f"Epoch: {epoch:03d}, Batch: {k+1}/{batches}, Cost: {cost:.6f}")
         if m % batches != 0:
             mini_batch_X = X_shuffled[:, batches*self.batch_size:m]
             mini_batch_Y = Y_shuffled[:, batches*self.batch_size:m]
@@ -157,20 +157,20 @@ class NeuralNetwork:
             self._update_params()
             cost = self._compute_cost(A_last, mini_batch_Y, cost_func)
             J_history_batches.append(cost)
-            cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
+            cost += self._add_reg_term(mini_batch_Y.shape[1]) if self.reg_param is not None else 0
             if details:
-                print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost_reg:.6f}")
+                print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost:.6f}")
         A_last = self._fwd_prp(X_shuffled)
         cost = self._compute_cost(A_last, Y_shuffled, cost_func)
         J_history_entire.append(cost)
-        cost_reg = self._compute_cost_reg(A_last, Y_shuffled,cost_func) if self.reg_param is not None else cost
+        cost += self._add_reg_term(Y_shuffled.shape[1]) if self.reg_param is not None else 0
         if 'sigm' in self.act_funcs[-1]:
           predictions = self.predict_bin(X_shuffled)
         else:
           predictions = self.predict(X_shuffled)
         true_Y = np.argmax(Y_shuffled, axis=0)
         accuracy = self.get_accuracy(predictions, true_Y)
-        print(f"Epoch: {epoch:03d}, Cost: {cost_reg:.6f}, accuracy: {accuracy:.4f}")
+        print(f"Epoch: {epoch:03d}, Cost: {cost:.6f}, accuracy: {accuracy:.4f}")
     self._plotter(J_history_entire) if plot_costs else None
     return J_history_batches, J_history_entire
 
