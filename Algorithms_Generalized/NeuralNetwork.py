@@ -2,15 +2,16 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 
-    
+   
 class NeuralNetwork:
-  def __init__(self, layer_list, act_funcs, alpha = 3e-2, batch_size=32, epochs=100):
+  def __init__(self, layer_list, act_funcs, alpha = 3e-2, batch_size=32, epochs=100, reg_param=None):
     self.layer_list = layer_list
     self.alpha = alpha
     self.batch_size = batch_size
     self.epochs = epochs
     self.params = {}
     self.cache = {}
+    self.reg_param = reg_param
     self.grads = {}
     self.act_funcs = act_funcs
     self._init_params(log_it=True)
@@ -38,6 +39,17 @@ class NeuralNetwork:
         return cost
     else:
         raise Exception("Unsupported Cost function")
+      
+  def _compute_cost_reg(self,A,Y,cost_func):
+    m = Y.shape[1]
+    cost = self._compute_cost(A,Y,cost_func)
+    L = len(self.layer_list) - 1
+    reg_cost = 0.0
+    for l in range(1,L+1):
+      reg_cost += np.sum(self.params[f"W{l}"]**2)
+    reg_cost = (reg_cost*self.reg_param)/(2*m)
+    cost += reg_cost
+    return cost
   def _one_hot(self, Y):
     uniq_labels = np.unique(Y)
     C = len(uniq_labels)
@@ -82,7 +94,8 @@ class NeuralNetwork:
     self.grads[f"dZ{L}"] = dZ
     self.grads[f"dW{L}"] = np.dot(dZ, self.cache[f"A{L-1}"].T) / m
     self.grads[f"db{L}"] = np.sum(dZ, axis = 1, keepdims = True)
-
+    if self.reg_param is not None:
+      self.grads[f"dW{L}"] += (self.reg_param*self.params[f"W{L}"])/(2*m)
     for l in reversed(range(1,L)):
       dA = np.dot(self.params[f"W{l+1}"].T, dZ) #this is the dA of the current layer
       Z = self.cache[f"Z{l}"]
@@ -98,6 +111,8 @@ class NeuralNetwork:
       self.grads[f"dZ{l}"] = dZ
       self.grads[f"dW{l}"] = (1/m)*np.dot(dZ, self.cache[f"A{l-1}"].T)
       self.grads[f"db{l}"] = (1/m)*np.sum(dZ, axis = 1, keepdims = True)
+      if self.reg_param is not None:
+        self.grads[f"dW{l}"] += (self.reg_param*self.params[f"W{l}"])/(2*m)
 
     # return self.grads
   def _update_params(self):
@@ -129,9 +144,10 @@ class NeuralNetwork:
             self._update_grads(mini_batch_X, mini_batch_Y)
             self._update_params()
             cost = self._compute_cost(A_last, mini_batch_Y, cost_func)
+            cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
             J_history_batches.append(cost)
             if details:
-                print(f"Epoch: {epoch:03d}, Batch: {k+1}/{batches}, Cost: {cost:.6f}")
+                print(f"Epoch: {epoch:03d}, Batch: {k+1}/{batches}, Cost: {cost_reg:.6f}")
         if m % batches != 0:
             mini_batch_X = X_shuffled[:, batches*self.batch_size:m]
             mini_batch_Y = Y_shuffled[:, batches*self.batch_size:m]
@@ -141,19 +157,20 @@ class NeuralNetwork:
             self._update_params()
             cost = self._compute_cost(A_last, mini_batch_Y, cost_func)
             J_history_batches.append(cost)
+            cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
             if details:
-                print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost:.6f}")
+                print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost_reg:.6f}")
         A_last = self._fwd_prp(X_shuffled)
         cost = self._compute_cost(A_last, Y_shuffled, cost_func)
         J_history_entire.append(cost)
-
+        cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
         if 'sigm' in self.act_funcs[-1]:
           predictions = self.predict_bin(X_shuffled)
         else:
           predictions = self.predict(X_shuffled)
         true_Y = np.argmax(Y_shuffled, axis=0)
         accuracy = self.get_accuracy(predictions, true_Y)
-        print(f"Epoch: {epoch:03d}, Cost: {cost:.6f}, accuracy: {accuracy:.4f}")
+        print(f"Epoch: {epoch:03d}, Cost: {cost_reg:.6f}, accuracy: {accuracy:.4f}")
     self._plotter(J_history_entire) if plot_costs else None
     return J_history_batches, J_history_entire
 
@@ -304,4 +321,3 @@ class NeuralNetwork:
     table = pd.concat([table1, table2])
     print(table)
     print(f"Accuracy: {self.get_accuracy(Y_pred, Y_act)}%")
-    
