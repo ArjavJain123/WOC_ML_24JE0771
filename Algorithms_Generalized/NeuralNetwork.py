@@ -163,7 +163,7 @@ class NeuralNetwork:
         A_last = self._fwd_prp(X_shuffled)
         cost = self._compute_cost(A_last, Y_shuffled, cost_func)
         J_history_entire.append(cost)
-        cost_reg = self._compute_cost_reg(A_last, mini_batch_Y,cost_func) if self.reg_param is not None else cost
+        cost_reg = self._compute_cost_reg(A_last, Y_shuffled,cost_func) if self.reg_param is not None else cost
         if 'sigm' in self.act_funcs[-1]:
           predictions = self.predict_bin(X_shuffled)
         else:
