@@ -161,7 +161,7 @@ class NeuralNetwork:
             if details:
                 print(f"Epoch: {epoch:03d}, Batch: last, Cost: {cost:.6f}")
         A_last = self._fwd_prp(X_shuffled)
-        cost = self._compute_cost(A_last, Y_shuffled, cost_func)
+        cost = self._compute_cost(A_last, Y_shuffled, cost_func,reg=False)
         J_history_entire.append(cost)
         cost += self._add_reg_term(Y_shuffled.shape[1]) if self.reg_param is not None else 0
         if 'sigm' in self.act_funcs[-1]:
@@ -184,6 +184,7 @@ class NeuralNetwork:
       return accuracy
 
   def k_fold_cv(self, X, Y, k_folds, cost_func, details=True,plot_acc=True,plot_cost_vs_epoch=True,retrain=True):
+    """Dont pass in standardized X in here"""
     m = X.shape[1]
     indices = np.random.permutation(m)
     X_shuffled = X[:, indices]
@@ -203,6 +204,10 @@ class NeuralNetwork:
       Y_train = np.concatenate((Y_shuffled[:test_start], Y_shuffled[test_end:]))
       X_test = X_shuffled[:,test_start:test_end]
       Y_test = Y_shuffled[test_start:test_end]
+      X_train_mean = (np.mean(X_train, axis=1)).reshape((1,X_train_mean.size))
+      X_train_std = (np.std(X_train, axis = 1)).reshape((1,X_train_mean.size))
+      X_train = (X_train - X_train_mean)/X_train_std
+      X_test  = (X_test - X_train_mean)/X_train_std
       useless,J_hist = self.train(X_train, Y_train, cost_func, details,plot_costs=False)
       if plot_cost_vs_epoch:
         J_hist_list.append(J_hist)
