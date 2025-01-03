@@ -204,7 +204,8 @@ class NeuralNetwork:
       Y_train = np.concatenate((Y_shuffled[:test_start], Y_shuffled[test_end:]))
       X_test = X_shuffled[:,test_start:test_end]
       Y_test = Y_shuffled[test_start:test_end]
-      X_train_mean = (np.mean(X_train, axis=1)).reshape((1,X_train_mean.size))
+      X_train_mean = (np.mean(X_train, axis=1))
+      X_train_mean = X_train_mean.reshape((1,X_train_mean.size))
       X_train_std = (np.std(X_train, axis = 1)).reshape((1,X_train_mean.size))
       X_train = (X_train - X_train_mean)/X_train_std
       X_test  = (X_test - X_train_mean)/X_train_std
