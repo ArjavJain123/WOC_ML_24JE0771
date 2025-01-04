@@ -5,6 +5,7 @@ Link to the google drive of the project: https://drive.google.com/drive/folders/
 
 All the .ipynb files uploaded in this repo were downloaded, and hence lack some features that google colab files might have. Links for the google colab version of all the .ipynb files in TestPredictions:
 
+Project Report: https://drive.google.com/file/d/1lHx5GlECwZkWHlHsEk_dKDmWGAjSygPt/view?usp=drive_link
 
 Binary:
 
