@@ -158,6 +158,7 @@ class KNN:
         training_accs = []
         testing_accs = []
         for k in list_of_ks:
+            print(f"Working on k value {k}")
             Y_pred_train = self.predict(X_train, Y_train, X_train,knn_k=k)
             training_acc = self.get_accuracy(Y_train, Y_pred_train)
             Y_pred_test = self.predict(X_train, Y_train, X_test, knn_k=k)
