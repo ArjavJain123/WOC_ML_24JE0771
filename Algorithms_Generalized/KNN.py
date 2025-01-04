@@ -20,7 +20,7 @@ class KNN:
         uniq_labels, cnts = np.unique(neighbrs,return_counts=True)
         majority_label = uniq_labels[np.argmax(cnts)]
         return majority_label
-    def predict(self, X_train, Y_train,X_test,knn_k=3):
+    def predict(self, x_train, y_train,x_test,knn_k=3):
         """
         args:
         X_train --> a 2d array of shape (m,n) where m is no of eg. and n is no of features
@@ -31,10 +31,10 @@ class KNN:
         Y_pred --> a 1d array of shape (m_test,)
         """
         Y_pred = []
-        for test_pt in X_test:
-            distances = self.dist_func(test_pt, X_train)
+        for test_pt in x_test:
+            distances = self.dist_func(test_pt, x_train)
             sorted_indices = np.argsort(distances)
-            k_nearest_negih = Y_train[sorted_indices[:knn_k]]
+            k_nearest_negih = y_train[sorted_indices[:knn_k]]
             prediction = self.majority_vote(k_nearest_negih)
             Y_pred.append(prediction)
         Y_pred = np.array(Y_pred)
@@ -152,7 +152,8 @@ class KNN:
         X_shuffled = X[indxs]
         Y_shuffled = Y[indxs]
         split_index = int(split_fraction* Y.shape[0])
-        X_train, X_test = X_shuffled[:,:split_index], X_shuffled[:,split_index:]
+        # print("split_indx is", split_index)
+        X_train, X_test = X_shuffled[:split_index,:], X_shuffled[split_index:,:]
         Y_train, Y_test = Y_shuffled[:split_index], Y_shuffled[split_index:]
         training_accs = []
         testing_accs = []
