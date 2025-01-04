@@ -65,8 +65,6 @@ class LinearRegression:
                 mini_batch_X = X_shuffled[batches*self.batch_size:,:]
                 mini_batch_Y = Y_shuffled[batches*self.batch_size]
                 dj_dw, dj_db = self._get_grads(mini_batch_X, mini_batch_Y)
-                self.W -= self.alpha*dj_dw
-                self.B -= self.alpha*dj_db
                 if self.reg_param is None:
                   self.W -= self.alpha*dj_dw
                   self.B -= self.alpha*dj_db
@@ -201,4 +199,11 @@ class LinearRegression:
         plt.title("Histogram Plot")
         plt.axvline(0,color='r',linestyle='--')
         plt.legend()
+        plt.show()
+        
+        
+    def fit_line(self, X, Y, i):
+        y_hat = self.predict(X)
+        plt.scatter(X[:,i], Y)
+        plt.plot(X[:,i], y_hat)
         plt.show()
