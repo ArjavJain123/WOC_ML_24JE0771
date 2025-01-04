@@ -183,7 +183,7 @@ class NeuralNetwork:
       accuracy = 100* np.mean(predictions == Y)
       return accuracy
 
-  def k_fold_cv(self, X, Y, k_folds, cost_func, details=True,plot_acc=True,plot_cost_vs_epoch=True,retrain=True):
+  def k_fold_cv(self, X, Y, k_folds, cost_func, details=True,plot_acc=True,plot_cost_vs_epoch=True,retrain=True, getConMat=True):
     """Dont pass in standardized X in here"""
     m = X.shape[1]
     indices = np.random.permutation(m)
@@ -218,9 +218,18 @@ class NeuralNetwork:
       # training_predictions = self.predict(X_train)
       # testing_predictions = self.predict(X_test)
       training_accuracy = self.get_accuracy(training_predictions, Y_train)
-      print(f"The training accuracy for fold: {fold+1} is {training_accuracy:.4f}")
+      # print(f"The training accuracy for fold: {fold+1} is {training_accuracy:.4f}")
       testing_accuracy = self.get_accuracy(testing_predictions, Y_test)
-      print(f"The testing accuracy for fold: {fold+1} is {testing_accuracy:.4f}")
+      # print(f"The testing accuracy for fold: {fold+1} is {testing_accuracy:.4f}")
+      if getConMat:
+        print("Training Confusion Matrix: ")
+        self.print_con_mat(self.get_conf_mat(Y_train, training_predictions))
+        print("Testing Confusion Matrix: ")
+        self.print_con_mat(self.get_conf_mat(Y_test, testing_predictions))
+      print("Training Classification Report: ")
+      self.classification_report(Y_train, training_predictions)
+      print("Testing Classification Report: ")
+      self.classification_report(Y_test, testing_predictions)
       training_accuracies.append(training_accuracy)
       testing_accuracies.append(testing_accuracy)
       print(f"Fold {fold+1} Completed!")
